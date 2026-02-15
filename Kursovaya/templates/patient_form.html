@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{{ 'Редактировать' if patient else 'Новый пациент' }}</h1>
+<form method="post">
+  <div class="mb-3">
+    <label class="form-label">Имя</label>
+    <input name="first_name" class="form-control" value="{{ patient.first_name if patient else '' }}" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Фамилия</label>
+    <input name="last_name" class="form-control" value="{{ patient.last_name if patient else '' }}" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Дата рождения</label>
+    <input name="dob" type="date" class="form-control" value="{{ patient.dob if patient and patient.dob else '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Телефон</label>
+    <input name="phone" class="form-control" value="{{ patient.phone if patient else '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Email</label>
+    <input name="email" type="email" class="form-control" value="{{ patient.email if patient else '' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Примечания</label>
+    <textarea name="notes" class="form-control">{{ patient.notes if patient else '' }}</textarea>
+  </div>
+  <button class="btn btn-primary" type="submit">Сохранить</button>
+  <a class="btn btn-secondary" href="/patients">Отмена</a>
+</form>
+{% endblock %}

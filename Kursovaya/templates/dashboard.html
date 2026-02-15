@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Добро пожаловать в поликлинику!</h1>
+<img src="{{ url_for('static', filename='clinic.jpg') }}" alt="Поликлиника" width="400">
+<p>Здесь вы можете просматривать пациентов, врачей и приёмы.</p>
+{% endblock %}

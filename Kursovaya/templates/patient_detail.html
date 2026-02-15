@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{{ patient.full_name() }}</h1>
+<ul class="list-group mb-3">
+  <li class="list-group-item">ID: {{ patient.id }}</li>
+  <li class="list-group-item">Дата рождения: {{ patient.birth_date.strftime('%d.%m.%Y') if patient.birth_date else '' }}</li>
+  <li class="list-group-item">Телефон: {{ patient.phone }}</li>
+  <li class="list-group-item">Email: {{ patient.email }}</li>
+  <li class="list-group-item">Примечания: {{ patient.notes }}</li>
+</ul>
+{% if current_user.role == 'admin' %}
+    <a href="{{ url_for('patient_edit', patient_id=patient.id) }}" class="btn btn-primary">Редактировать</a>
+{% endif %}
+{% endblock %}
