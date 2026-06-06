@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поликлиника</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+<div id="app">
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="bi bi-heart-pulse-fill"></i> Поликлиника
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}"><i class="bi bi-house"></i> Главная</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('contacts') }}"><i class="bi bi-telephone"></i> Контакты</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('faq') }}"><i class="bi bi-question-circle"></i> FAQ</a>
+                    </li>
+
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.role == 'admin' %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patients_list') }}"><i class="bi bi-people"></i> Пациенты</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('doctors_list') }}"><i class="bi bi-heart-pulse"></i> Врачи</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('appointments_list') }}"><i class="bi bi-calendar-check"></i> Приёмы</a></li>
+                        {% elif current_user.role == 'doctor' %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('my_appointments') }}"><i class="bi bi-calendar-check"></i> Мои приёмы</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('my_schedule') }}"><i class="bi bi-calendar-week"></i> Моё расписание</a></li>
+                        {% elif current_user.role == 'patient' %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('patient_detail', patient_id=current_user.patient.id) }}"><i class="bi bi-person-badge"></i> Моя карта</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('my_appointments') }}"><i class="bi bi-calendar"></i> Мои приёмы</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('doctors_list') }}"><i class="bi bi-heart-pulse"></i> Врачи</a></li>
+                        {% endif %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Выйти</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container mt-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="footer mt-5">
+        <div class="container text-center">
+            <p class="mb-1">&copy; 2025 Поликлиника. Все права защищены.</p>
+            <p class="mb-0"><i class="bi bi-geo-alt"></i> г. Москва, ул. Медицинская, 10 | <i class="bi bi-telephone"></i> +7 (999) 123-45-67</p>
+        </div>
+    </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-telephone-fill"></i> Контакты</h1>
+
+<div class="row g-4">
+    <div class="col-lg-5 d-flex">
+        <div class="card p-4 h-100 w-100">
+            <h4 class="mb-4">Наши контакты</h4>
+            <p><i class="bi bi-geo-alt-fill text-primary"></i> <strong>Адрес:</strong> г. Москва, ул. Медицинская, 10</p>
+            <p><i class="bi bi-telephone-fill text-primary"></i> <strong>Телефон:</strong> +7 (999) 123-45-67</p>
+            <p><i class="bi bi-envelope-fill text-primary"></i> <strong>Email:</strong> clinic@example.com</p>
+            <p><i class="bi bi-clock-fill text-primary"></i> <strong>Часы работы:</strong> Пн-Пт 8:00–20:00, Сб 9:00–15:00</p>
+        </div>
+    </div>
+    <div class="col-lg-7 d-flex">
+        <div class="card p-4 h-100 w-100">
+            <h4 class="mb-4">Форма обратной связи</h4>
+            <form @submit.prevent="submitFeedback" novalidate>
+                <div class="mb-3">
+                    <label class="form-label">ФИО *</label>
+                    <input type="text" class="form-control" :class="{'is-invalid': errors.fullname}"
+                           v-model="feedback.fullname" @input="errors.fullname=''"
+                           placeholder="Иванов Иван Иванович">
+                    <div class="invalid-feedback" v-if="errors.fullname">{{ '{{ errors.fullname }}' }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Телефон *</label>
+                    <input type="tel" class="form-control" :class="{'is-invalid': errors.phone}"
+                           :value="feedback.phone"
+                           @input="filterPhone"
+                           @blur="validateField('phone')"
+                           placeholder="+7 (___) ___-__-__">
+                    <div class="invalid-feedback" v-if="errors.phone">{{ '{{ errors.phone }}' }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email *</label>
+                    <input type="email" class="form-control" :class="{'is-invalid': errors.email}"
+                           v-model="feedback.email" @input="errors.email=''"
+                           placeholder="example@mail.ru">
+                    <div class="invalid-feedback" v-if="errors.email">{{ '{{ errors.email }}' }}</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Сообщение</label>
+                    <textarea class="form-control" v-model="feedback.message" rows="3"
+                              placeholder="Текст сообщения"></textarea>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" v-model="agreement" id="agreement">
+                    <label class="form-check-label" for="agreement">Я согласен на обработку персональных данных</label>
+                </div>
+                <button type="submit" class="btn btn-primary" :disabled="loading">
+                    <span v-if="!loading"><i class="bi bi-send"></i> Отправить</span>
+                    <span v-else><span class="spinner-border spinner-border-sm"></span> Отправка...</span>
+                </button>
+                <div v-if="status.text" :class="'alert mt-3 alert-'+status.type">{{ '{{ status.text }}' }}</div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
