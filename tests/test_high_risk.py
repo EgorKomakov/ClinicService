@@ -157,7 +157,7 @@ def test_cannot_pay_for_cancelled_appointment(app, client, init_data):
     response = client.post(f'/appointments/{appt_id}/pay')
 
     assert response.status_code == 400
-    assert 'Нельзя оплатить отмененный прием' in response.get_json()['message']
+    assert 'Нельзя оплатить отмененный или пропущенный прием' in response.get_json()['message']
 
 
 def test_cannot_pay_for_someone_elses_appointment(app, client, init_data):
