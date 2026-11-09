@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="error-page fade-in">
+    <div class="error-code">404</div>
+    <h3>Страница не найдена</h3>
+    <p class="text-muted">Возможно, она была удалена или вы перешли по неверной ссылке.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary btn-lg mt-3">
+        <i class="bi bi-house"></i> Вернуться на главную
+    </a>
+</div>
+{% endblock %}

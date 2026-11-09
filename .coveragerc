@@ -1,0 +1,7 @@
+[run]
+omit =
+    add_doctors.py
+    create_admin.py
+    seed_services.py
+    tests/*
+    .venv/*

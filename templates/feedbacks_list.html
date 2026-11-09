@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-envelope-paper-fill"></i> Обратная связь</h2>
+</div>
+
+<div class="card p-3 mb-4 shadow-sm">
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('feedbacks_list', status='all') }}"
+           class="btn {% if status_filter == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            Все обращения
+        </a>
+        <a href="{{ url_for('feedbacks_list', status='unread') }}"
+           class="btn {% if status_filter == 'unread' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            Только новые
+        </a>
+    </div>
+</div>
+
+<div class="card p-3 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>ФИО</th>
+                    <th>Контакты</th>
+                    <th>Сообщение</th>
+                    <th>Статус</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in feedbacks %}
+                <tr id="feedback-row-{{ f.id }}" class="{% if not f.is_read %}table-info{% endif %}">
+                    <td>{{ f.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                    <td class="fw-bold">{{ f.fullname }}</td>
+                    <td>
+                        <div><i class="bi bi-telephone text-muted"></i> {{ f.phone }}</div>
+                        <div><i class="bi bi-envelope text-muted"></i> {{ f.email }}</div>
+                    </td>
+                    <td>
+                        <span class="text-muted small d-inline-block text-break" style="max-width: 300px;">
+                            {{ (f.message[:50] + '...') if f.message and f.message|length > 50 else (f.message or '—') }}
+                        </span>
+                    </td>
+                    <td id="status-badge-container-{{ f.id }}">
+                        {% if f.is_read %}
+                            <span class="badge bg-secondary">Прочитано</span>
+                        {% else %}
+                            <span class="badge bg-danger">Новое</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-primary"
+                                    data-bs-toggle="modal" data-bs-target="#feedbackModal"
+                                    data-id="{{ f.id }}"
+                                    data-fullname="{{ f.fullname }}"
+                                    data-phone="{{ f.phone }}"
+                                    data-email="{{ f.email }}"
+                                    data-date="{{ f.created_at.strftime('%d.%m.%Y %H:%M') }}"
+                                    data-message="{{ f.message }}"
+                                    data-is-read="{{ f.is_read }}">
+                                <i class="bi bi-eye"></i> Читать
+                            </button>
+
+                            <button type="button" class="btn {% if f.is_read %}btn-outline-secondary{% else %}btn-outline-success{% endif %}"
+                                    id="toggle-btn-{{ f.id }}"
+                                    onclick="toggleReadStatus({{ f.id }})"
+                                    title="{% if f.is_read %}Отметить как непрочитанное{% else %}Отметить как прочитанное{% endif %}">
+                                <i class="bi {% if f.is_read %}bi-arrow-counterclockwise{% else %}bi-check2-all{% endif %}" id="toggle-icon-{{ f.id }}"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                        Сообщений пока нет.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-3">
+        <ul class="pagination justify-content-center mb-0">
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('feedbacks_list', page=pagination.prev_num, status=status_filter) }}">Назад</a>
+            </li>
+            {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if page_num %}
+                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('feedbacks_list', page=page_num, status=status_filter) }}">{{ page_num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('feedbacks_list', page=pagination.next_num, status=status_filter) }}">Вперед</a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="feedbackModalLabel"><i class="bi bi-envelope-open"></i> Обращение</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>ФИО:</strong> <span id="modal-fullname"></span></p>
+                        <p class="mb-1"><strong>Дата:</strong> <span id="modal-date"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Телефон:</strong> <span id="modal-phone"></span></p>
+                        <p class="mb-1"><strong>Email:</strong> <span id="modal-email"></span></p>
+                    </div>
+                </div>
+                <hr>
+                <h6 class="text-muted mb-2">Текст сообщения:</h6>
+                <div class="p-3 bg-light rounded border" style="white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word; min-height: 100px;">
+                    <span id="modal-message"></span>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-success" id="modal-toggle-btn" onclick="toggleFromModal()">
+                    <i class="bi bi-check2-all"></i> Отметить как прочитанное
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentFeedbackId = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const feedbackModal = document.getElementById('feedbackModal');
+
+        feedbackModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+
+            currentFeedbackId = button.getAttribute('data-id');
+            const isRead = button.getAttribute('data-is-read') === 'True';
+
+            document.getElementById('modal-fullname').textContent = button.getAttribute('data-fullname');
+            document.getElementById('modal-phone').textContent = button.getAttribute('data-phone');
+            document.getElementById('modal-email').textContent = button.getAttribute('data-email');
+            document.getElementById('modal-date').textContent = button.getAttribute('data-date');
+            document.getElementById('modal-message').textContent = button.getAttribute('data-message') || '—';
+
+            updateModalButton(isRead);
+        });
+    });
+
+    async function toggleReadStatus(id) {
+        try {
+            const res = await fetch(`/feedbacks/${id}/toggle_read`, { method: 'POST' });
+            const data = await res.json();
+
+            if (data.success) {
+                updateUI(id, data.is_read);
+            }
+        } catch (e) {
+            alert("Ошибка при обновлении статуса");
+        }
+    }
+
+    function toggleFromModal() {
+        if (currentFeedbackId) {
+            toggleReadStatus(currentFeedbackId);
+        }
+    }
+
+    function updateUI(id, isRead) {
+        const badgeContainer = document.getElementById(`status-badge-container-${id}`);
+        if (badgeContainer) {
+            if (isRead) {
+                badgeContainer.innerHTML = '<span class="badge bg-secondary">Прочитано</span>';
+            } else {
+                badgeContainer.innerHTML = '<span class="badge bg-danger">Новое</span>';
+            }
+        }
+
+        const toggleBtn = document.getElementById(`toggle-btn-${id}`);
+        const toggleIcon = document.getElementById(`toggle-icon-${id}`);
+        if (toggleBtn && toggleIcon) {
+            if (isRead) {
+                toggleBtn.className = 'btn btn-outline-secondary';
+                toggleBtn.title = 'Отметить как непрочитанное';
+                toggleIcon.className = 'bi bi-arrow-counterclockwise';
+            } else {
+                toggleBtn.className = 'btn btn-outline-success';
+                toggleBtn.title = 'Отметить как прочитанное';
+                toggleIcon.className = 'bi bi-check2-all';
+            }
+        }
+
+        const row = document.getElementById(`feedback-row-${id}`);
+        if (row) {
+            if (isRead) {
+                row.classList.remove('table-info');
+            } else {
+                row.classList.add('table-info');
+            }
+        }
+
+        updateModalButton(isRead);
+
+        const readBtn = document.querySelector(`button[data-id="${id}"]`);
+        if (readBtn) {
+            readBtn.setAttribute('data-is-read', isRead ? 'True' : 'False');
+        }
+    }
+
+    function updateModalButton(isRead) {
+        const modalBtn = document.getElementById('modal-toggle-btn');
+        if (isRead) {
+            modalBtn.className = 'btn btn-outline-secondary';
+            modalBtn.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> Отметить как непрочитанное';
+        } else {
+            modalBtn.className = 'btn btn-outline-success';
+            modalBtn.innerHTML = '<i class="bi bi-check2-all"></i> Отметить как прочитанное';
+        }
+    }
+</script>
+{% endblock %}

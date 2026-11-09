@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{% if appointment %}Редактирование приёма{% else %}Новый приём{% endif %}</h2>
+<div class="card p-4 mt-3 shadow-sm">
+    <form method="POST">
+
+        {% if for_patient %}
+            <div class="mb-3">
+                <label class="form-label">Врач</label>
+                <input class="form-control" value="{{ doctor.full_name() }} ({{ doctor.specialization or '—' }})" disabled>
+                <input type="hidden" name="doctor_id" value="{{ doctor.id }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Дата и время приёма</label>
+                <select name="slot_datetime" class="form-select" required>
+                    <option value="">-- Выберите свободное время --</option>
+                    {% for date_key, slots in grouped_slots.items() %}
+                        <optgroup label="{{ date_key }}">
+                            {% for dt in slots %}
+                                <option value="{{ dt.strftime('%Y-%m-%dT%H:%M') }}">
+                                    {{ dt.strftime('%H:%M') }}
+                                </option>
+                            {% endfor %}
+                        </optgroup>
+                    {% endfor %}
+                </select>
+                {% if not grouped_slots %}
+                    <div class="form-text text-danger mt-2">
+                        <i class="bi bi-exclamation-circle"></i> Нет доступных слотов для записи.
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="mb-3">
+                <label class="form-label">Пациент:</label>
+                <select name="patient_id" class="form-select" required>
+                    <option value="">-- Выберите пациента --</option>
+                    {% for patient in patients %}
+                        <option value="{{ patient.id }}"
+                            {% if appointment and appointment.patient_id == patient.id %}selected{% endif %}>
+                            {{ patient.full_name() }} ({{ patient.email }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Врач:</label>
+                <select name="doctor_id" id="adminDoctorSelect" class="form-select" required>
+                    <option value="">-- Выберите врача --</option>
+                    {% for doctor in doctors %}
+                        <option value="{{ doctor.id }}"
+                            {% if appointment and appointment.doctor_id == doctor.id %}selected{% endif %}>
+                            {{ doctor.full_name() }} ({{ doctor.specialization or '—' }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Дата и время:</label>
+                <select name="slot_datetime" id="adminSlotSelect" class="form-select" required>
+                    <option value="">-- Сначала выберите врача --</option>
+                </select>
+                <div id="slotLoading" class="form-text text-primary" style="display: none;">
+                    <span class="spinner-border spinner-border-sm"></span> Загрузка слотов...
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="mb-3 mt-4">
+            <label class="form-label">Примечания</label>
+            <textarea name="notes" class="form-control" rows="3" placeholder="Дополнительная информация...">{{ appointment.notes if appointment else '' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Сохранить</button>
+        <a href="{{ url_for('appointments_list') }}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const doctorSelect = document.getElementById('adminDoctorSelect');
+        const slotSelect = document.getElementById('adminSlotSelect');
+        const loadingText = document.getElementById('slotLoading');
+
+        if (doctorSelect && slotSelect) {
+            const currentSlotValue = "{{ appointment.date.strftime('%Y-%m-%dT%H:%M') if appointment else '' }}";
+
+            const excludeId = "{{ appointment.id if appointment else '' }}";
+
+            doctorSelect.addEventListener('change', async function() {
+                const doctorId = this.value;
+                if (!doctorId) {
+                    slotSelect.innerHTML = '<option value="">-- Сначала выберите врача --</option>';
+                    return;
+                }
+
+                loadingText.style.display = 'block';
+                slotSelect.innerHTML = '<option value="">-- Загрузка... --</option>';
+
+                try {
+                    let url = `/api/available_slots/${doctorId}`;
+                    if (excludeId) {
+                        url += `?exclude_appointment_id=${excludeId}`;
+                    }
+
+                    const res = await fetch(url);
+                    const groupedSlots = await res.json();
+
+                    slotSelect.innerHTML = '<option value="">-- Выберите свободное время --</option>';
+
+                    if (Object.keys(groupedSlots).length === 0) {
+                        slotSelect.innerHTML = '<option value="">Нет свободных слотов</option>';
+                    } else {
+                        for (const [dateLabel, slots] of Object.entries(groupedSlots)) {
+                            const optgroup = document.createElement('optgroup');
+                            optgroup.label = dateLabel;
+
+                            slots.forEach(slot => {
+                                const option = document.createElement('option');
+                                option.value = slot.value;
+                                option.textContent = slot.time;
+                                if (slot.value === currentSlotValue) {
+                                    option.selected = true;
+                                }
+                                optgroup.appendChild(option);
+                            });
+                            slotSelect.appendChild(optgroup);
+                        }
+                    }
+                } catch (e) {
+                    slotSelect.innerHTML = '<option value="">Ошибка загрузки слотов</option>';
+                } finally {
+                    loadingText.style.display = 'none';
+                }
+            });
+
+            if (doctorSelect.value) {
+                setTimeout(() => {
+                    doctorSelect.dispatchEvent(new Event('change'));
+                }, 100);
+            }
+        }
+    });
+</script>
+{% endblock %}

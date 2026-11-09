@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block content %}
+
+{% if not current_user.is_authenticated %}
+<div class="text-center py-5">
+    <h1 class="display-3 fw-bold" style="color: #1e5f5f;">Добро пожаловать в Поликлинику</h1>
+    <p class="lead text-muted mb-5">Современная мультимедийная система управления приёмами и здоровьем</p>
+
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8">
+            <img src="{{ url_for('static', filename='clinic.jpg') }}" alt="Поликлиника"
+                 class="img-fluid rounded-4 shadow-lg w-100" style="max-height: 400px; object-fit: cover;">
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5 justify-content-center">
+        <div class="col-md-4">
+            <div class="card h-100 p-4 border-0 shadow-sm">
+                <i class="bi bi-images display-5 text-primary mb-3"></i>
+                <h5>Медицинские снимки</h5>
+                <p class="text-muted small mb-0">Интерактивный просмотр рентгеновских снимков и МРТ с функцией масштабирования прямо в браузере.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 p-4 border-0 shadow-sm">
+                <i class="bi bi-mic-fill display-5 text-danger mb-3"></i>
+                <h5>Аудио-заметки</h5>
+                <p class="text-muted small mb-0">Врач может надиктовать голосовые рекомендации, а вы — прослушать их в любой момент.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 p-4 border-0 shadow-sm">
+                <i class="bi bi-trophy-fill display-5 text-warning mb-3"></i>
+                <h5>Геймификация</h5>
+                <p class="text-muted small mb-0">Получайте опыт (XP), повышайте уровень и открывайте достижения за заботу о своем здоровье.</p>
+            </div>
+        </div>
+    </div>
+
+    <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-5 py-3 shadow">
+        <i class="bi bi-box-arrow-in-right"></i> Войти в систему
+    </a>
+</div>
+
+{% else %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold">С возвращением, {{ current_user.username }}!</h2>
+        <p class="text-muted">Ваша персональная панель управления</p>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    {% if current_user.role == 'patient' and current_user.patient %}
+    <div class="col-md-5">
+        <div class="card p-4 border-warning shadow-sm mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0 text-warning"><i class="bi bi-trophy-fill"></i> Мой прогресс</h4>
+                <span class="badge bg-warning text-dark fs-6">Уровень {{ current_user.patient.level }}</span>
+            </div>
+            {% set progress = current_user.patient.get_level_progress() %}
+            <div class="d-flex justify-content-between small text-muted mb-1">
+                <span>До следующего уровня</span>
+                <strong>{{ progress.current_points }} / {{ progress.needed_points }} XP</strong>
+            </div>
+            <div class="progress mb-3" style="height: 12px;">
+                <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated"
+                     role="progressbar" style="width: {{ progress.percentage }}%;"></div>
+            </div>
+            <a href="{{ url_for('patient_detail', patient_id=current_user.patient.id) }}" class="btn btn-outline-warning w-100">
+                Моя медицинская карта
+            </a>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card p-4 border-primary shadow-sm h-100">
+            <h4 class="mb-4 text-primary"><i class="bi bi-calendar-event"></i> Ближайший приём</h4>
+            {% if next_app %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary text-white rounded p-3 text-center me-3" style="min-width: 80px;">
+                        <div class="fs-3 fw-bold lh-1">{{ next_app.date.strftime('%d') }}</div>
+                        <div class="small">{{ next_app.date.strftime('%b') }}</div>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">{{ next_app.doctor.full_name() }}</h5>
+                        <p class="text-muted mb-0"><i class="bi bi-clock"></i> {{ next_app.date.strftime('%H:%M') }} • {{ next_app.doctor.specialization or 'Врач' }}</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('view_appointment', appointment_id=next_app.id) }}" class="btn btn-primary">
+                    Подробнее о приёме
+                </a>
+            {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-calendar-x display-4 mb-3 d-block"></i>
+                    <p>У вас нет запланированных приёмов.</p>
+                    <a href="{{ url_for('doctors_list') }}" class="btn btn-primary">Записаться к врачу</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.role == 'doctor' %}
+    <div class="col-md-12">
+        <div class="card p-4 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0 text-success"><i class="bi bi-calendar-check"></i> Мои приёмы на сегодня</h4>
+                <a href="{{ url_for('appointments_list') }}" class="btn btn-sm btn-outline-primary">Все приёмы</a>
+            </div>
+
+            {% if today_apps %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Время</th>
+                                <th>Пациент</th>
+                                <th>Статус</th>
+                                <th>Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in today_apps %}
+                            <tr>
+                                <td class="fw-bold">{{ app.date.strftime('%H:%M') }}</td>
+                                <td>{{ app.patient.full_name() }}</td>
+                                <td>
+                                    {% if app.status == 'completed' %}<span class="badge bg-success">Завершен</span>
+                                    {% elif app.status == 'no-show' %}<span class="badge bg-danger">Неявка</span>
+                                    {% else %}<span class="badge bg-primary">Ожидается</span>{% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('view_appointment', appointment_id=app.id) }}" class="btn btn-sm btn-primary">Открыть карточку</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-cup-hot display-4 mb-3 d-block"></i>
+                    <h5>На сегодня приёмов нет</h5>
+                    <p class="mb-0">Можете проверить своё расписание на другие дни.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.role == 'admin' %}
+    <div class="col-md-12 mb-3">
+        <h4 class="text-secondary mb-3"><i class="bi bi-bar-chart-fill"></i> Статистика клиники</h4>
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white p-4 shadow-sm border-0 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1 text-white-50">Пациенты</h6>
+                            <h2 class="mb-0 fw-bold">{{ total_patients }}</h2>
+                        </div>
+                        <i class="bi bi-people-fill display-4 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white p-4 shadow-sm border-0 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1 text-white-50">Врачи</h6>
+                            <h2 class="mb-0 fw-bold">{{ total_doctors }}</h2>
+                        </div>
+                        <i class="bi bi-heart-pulse-fill display-4 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white p-4 shadow-sm border-0 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1 text-white-50">Всего приёмов</h6>
+                            <h2 class="mb-0 fw-bold">{{ total_apps }}</h2>
+                        </div>
+                        <i class="bi bi-calendar-check-fill display-4 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark p-4 shadow-sm border-0 h-100">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase mb-1 text-dark-50">Ожидают приёма</h6>
+                            <h2 class="mb-0 fw-bold">{{ pending_apps }}</h2>
+                        </div>
+                        <i class="bi bi-hourglass-split display-4 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 text-center mt-4">
+        <a href="{{ url_for('patients_list') }}" class="btn btn-primary me-2"><i class="bi bi-people"></i> Управление пациентами</a>
+        <a href="{{ url_for('appointments_list') }}" class="btn btn-success"><i class="bi bi-calendar-check"></i> Все приёмы</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endif %}
+{% endblock %}

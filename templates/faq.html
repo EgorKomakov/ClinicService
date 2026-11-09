@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1 class="mb-4"><i class="bi bi-question-circle-fill"></i> Часто задаваемые вопросы</h1>
+
+<div class="accordion" id="faqAccordion">
+
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#q1">
+                Как записаться на прием?
+            </button>
+        </h2>
+        <div id="q1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                Войдите в систему под своей учетной записью, перейдите в раздел <strong>«Врачи»</strong>, выберите нужного специалиста и нажмите кнопку «Записаться». Вам будет предложен список свободных слотов на ближайшие 14 дней, сгруппированных по датам.
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q2">
+                Можно ли изменить или отменить запись?
+            </button>
+        </h2>
+        <div id="q2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                Вы можете <strong>отменить запись</strong> самостоятельно в разделе «Мои приёмы», если до приёма осталось <strong>более 2 часов</strong>.
+                <br><br>
+                Для изменения времени нужно сначала отменить текущую запись, а затем выбрать новый слот.
+                Если до приёма осталось менее 2 часов, пожалуйста, свяжитесь с регистратурой по телефону.
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q3">
+                Что такое XP, уровни и достижения?
+            </button>
+        </h2>
+        <div id="q3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                Это элементы геймификации, которые помогают вам следить за здоровьем в увлекательной форме.
+                За каждый успешно проведенный прием врач начисляет вам <strong>+20 XP</strong>. Накапливая опыт, вы повышаете свой уровень и открываете достижения (бейджи).
+                <em>Обратите внимание: за неявку на прием (без предупреждения) списывается 10 XP.</em>
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q4">
+                Где посмотреть мои медицинские снимки и аудиозаметки?
+            </button>
+        </h2>
+        <div id="q4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                Все медицинские снимки, загруженные врачом, доступны в вашей личной карте (раздел <strong>«Моя карта»</strong>). Вы можете просматривать их в интерактивном режиме с возможностью увеличения.
+                <br><br>
+                Аудиозаметки, записанные врачом во время приема, вы можете прослушать в карточке соответствующего приёма в разделе «Мои приёмы».
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q5">
+                Как оплатить прием или назначенные процедуры?
+            </button>
+        </h2>
+        <div id="q5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                После завершения приёма в его карточке появится блок <strong>«Финансы»</strong>. Вы можете оплатить консультацию врача и назначенные процедуры онлайн. Стоимость всех услуг также доступна в разделе <strong>«Прайс-лист»</strong>.
+            </div>
+        </div>
+    </div>
+
+    <div class="accordion-item">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#q6">
+                Кто имеет доступ к моей медицинской карте?
+            </button>
+        </h2>
+        <div id="q6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body">
+                Доступ к вашей карте строго разграничен. Вы видите только свои данные.
+                Врачи клиники имеют доступ к карте только в том случае, если у вас с ними есть общий приём (запланированный или завершенный).
+                Администратор клиники имеет полный доступ для управления расписанием и обработки записей.
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

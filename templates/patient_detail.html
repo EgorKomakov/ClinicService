@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1><i class="bi bi-person-badge"></i> {{ patient.full_name() }}</h1>
+
+<div class="row mt-3">
+    <div class="col-md-4">
+
+        <div class="card p-3 mb-4 border-warning shadow-sm">
+            <h5 class="mb-3 text-warning"><i class="bi bi-trophy-fill"></i> Уровень {{ patient.level }}</h5>
+
+            {% set progress = patient.get_level_progress() %}
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <small class="text-muted">Прогресс</small>
+                <span class="badge bg-warning text-dark">{{ patient.points }} XP</span>
+            </div>
+            <div class="progress mb-2" style="height: 15px;">
+                <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated"
+                     role="progressbar"
+                     style="width: {{ progress.percentage }}%;">
+                </div>
+            </div>
+            <small class="text-muted d-block text-end mb-3">До след. уровня: {{ progress.needed_points - progress.current_points }} XP</small>
+
+            {% if patient.achievements %}
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    {% for ach in patient.achievements %}
+                        <div class="badge bg-light text-dark border p-2" title="{{ ach.description }}">
+                            <i class="bi bi-{{ ach.icon }} text-warning fs-5"></i>
+                            <span class="ms-1">{{ ach.name }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="alert alert-light border small py-2 mb-0">
+                <strong><i class="bi bi-info-circle"></i> Как получать XP:</strong><br>
+                +20 XP — За успешно проведенный прием<br>
+                -10 XP — За неявку на прием<br>
+                <em>Очки начисляются только врачом!</em>
+            </div>
+        </div>
+
+        <div class="card p-3 mb-4">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>ID:</strong> {{ patient.id }}</li>
+                <li class="list-group-item"><strong>Дата рождения:</strong> {{ patient.birth_date.strftime('%d.%m.%Y') if patient.birth_date else '' }}</li>
+                <li class="list-group-item"><strong>Телефон:</strong> {{ patient.phone }}</li>
+                <li class="list-group-item"><strong>Email:</strong> {{ patient.email }}</li>
+                <li class="list-group-item"><strong>Примечания:</strong> {{ patient.notes }}</li>
+            </ul>
+            {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('patient_edit', patient_id=patient.id) }}" class="btn btn-primary mt-3"><i class="bi bi-pencil"></i> Редактировать</a>
+            {% endif %}
+        </div>
+
+        {% if current_user.role in ('admin', 'doctor') %}
+        <div class="card p-3 mb-4 border-primary">
+            <h5 class="card-title text-primary"><i class="bi bi-cloud-arrow-up"></i> Загрузить снимок</h5>
+            <form method="POST" action="{{ url_for('upload_image', patient_id=patient.id) }}" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <input class="form-control" type="file" name="image" accept="image/*" required>
+                </div>
+                <div class="mb-3">
+                    <input type="text" name="description" class="form-control" placeholder="Комментарий">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Загрузить</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-md-8">
+        <h4 class="mb-3"><i class="bi bi-images"></i> Медицинские снимки</h4>
+
+        {% if patient.images %}
+        <div class="gallery-scroll-container">
+            <div class="row g-3">
+                {% for img in patient.images %}
+                <div class="col-sm-6 col-md-4">
+                    <div class="card h-100 shadow-sm">
+                        <a href="{{ url_for('static', filename='uploads/' + img.filename) }}" class="image-link">
+                            <img src="{{ url_for('static', filename='uploads/' + img.filename) }}"
+                                 class="card-img-top img-fluid"
+                                 loading="lazy"
+                                 style="height: 150px; object-fit: cover; border-radius: 12px 12px 0 0; cursor: pointer;"
+                                 alt="{{ img.description or 'Снимок' }}">
+                        </a>
+                        <div class="card-body p-2">
+                            <p class="card-text small mb-1 text-truncate" title="{{ img.original_name }}">
+                                <i class="bi bi-file-earmark-image"></i> {{ img.original_name }}
+                            </p>
+                            {% if img.description %}
+                                <p class="card-text small text-muted mb-0">{{ img.description }}</p>
+                            {% endif %}
+                            <p class="card-text small text-muted" style="font-size: 0.75rem;">
+                                {{ img.uploaded_at.strftime('%d.%m.%Y %H:%M') }}
+                            </p>
+                        </div>
+                        {% if current_user.role in ('admin', 'doctor') %}
+                        <div class="card-footer bg-white border-0 p-1 text-end">
+                            <form method="POST" action="{{ url_for('delete_image', image_id=img.id) }}" onsubmit="return confirm('Удалить снимок?');" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-secondary text-center">
+            <i class="bi bi-image display-4 d-block mb-2"></i>
+            У этого пациента пока нет загруженных снимков.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.6/viewer.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.6/viewer.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const galleryContainer = document.querySelector('.gallery-scroll-container');
+        if (galleryContainer) {
+            new Viewer(galleryContainer, {
+                navbar: false, title: false,
+                toolbar: { zoomIn: 1, zoomOut: 1, oneToOne: 1, reset: 1, rotateLeft: 1, rotateRight: 1 }
+            });
+        }
+    });
+</script>
+{% endblock %}
