@@ -40,7 +40,7 @@
             </div>
         </div>
 
-        <div class="card p-3 mb-4">
+        <div class="card p-3 mb-4 shadow-sm">
             <ul class="list-group list-group-flush">
                 <li class="list-group-item"><strong>ID:</strong> {{ patient.id }}</li>
                 <li class="list-group-item"><strong>Дата рождения:</strong> {{ patient.birth_date.strftime('%d.%m.%Y') if patient.birth_date else '' }}</li>
@@ -54,14 +54,14 @@
         </div>
 
         {% if current_user.role in ('admin', 'doctor') %}
-        <div class="card p-3 mb-4 border-primary">
-            <h5 class="card-title text-primary"><i class="bi bi-cloud-arrow-up"></i> Загрузить снимок</h5>
+        <div class="card p-3 mb-4 border-primary shadow-sm">
+            <h5 class="card-title text-primary"><i class="bi bi-cloud-arrow-up"></i> Загрузить снимок или документ</h5>
             <form method="POST" action="{{ url_for('upload_image', patient_id=patient.id) }}" enctype="multipart/form-data">
                 <div class="mb-3">
-                    <input class="form-control" type="file" name="image" accept="image/*" required>
+                    <input class="form-control" type="file" name="image" required>
                 </div>
                 <div class="mb-3">
-                    <input type="text" name="description" class="form-control" placeholder="Комментарий">
+                    <input type="text" name="description" class="form-control" placeholder="Комментарий (например: Рентген грудной клетки)">
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Загрузить</button>
             </form>
@@ -70,7 +70,7 @@
     </div>
 
     <div class="col-md-8">
-        <h4 class="mb-3"><i class="bi bi-images"></i> Медицинские снимки</h4>
+        <h4 class="mb-3"><i class="bi bi-images"></i> Медицинские снимки и документы</h4>
 
         {% if patient.images %}
         <div class="gallery-scroll-container">
@@ -78,16 +78,28 @@
                 {% for img in patient.images %}
                 <div class="col-sm-6 col-md-4">
                     <div class="card h-100 shadow-sm">
-                        <a href="{{ url_for('static', filename='uploads/' + img.filename) }}" class="image-link">
-                            <img src="{{ url_for('static', filename='uploads/' + img.filename) }}"
-                                 class="card-img-top img-fluid"
-                                 loading="lazy"
-                                 style="height: 150px; object-fit: cover; border-radius: 12px 12px 0 0; cursor: pointer;"
-                                 alt="{{ img.description or 'Снимок' }}">
-                        </a>
+                        {% if img.filename.lower().endswith('.pdf') %}
+                            <a href="{{ url_for('static', filename='uploads/' + img.filename) }}" target="_blank" class="d-flex align-items-center justify-content-center bg-light" style="height: 150px; border-radius: 12px 12px 0 0;">
+                                <i class="bi bi-file-earmark-pdf text-danger" style="font-size: 4rem;"></i>
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('static', filename='uploads/' + img.filename) }}" class="image-link">
+                                <img src="{{ url_for('static', filename='uploads/' + img.filename) }}"
+                                     class="card-img-top img-fluid"
+                                     loading="lazy"
+                                     style="height: 150px; object-fit: cover; border-radius: 12px 12px 0 0; cursor: pointer;"
+                                     alt="{{ img.description or 'Снимок' }}">
+                            </a>
+                        {% endif %}
+
                         <div class="card-body p-2">
                             <p class="card-text small mb-1 text-truncate" title="{{ img.original_name }}">
-                                <i class="bi bi-file-earmark-image"></i> {{ img.original_name }}
+                                {% if img.filename.lower().endswith('.pdf') %}
+                                    <i class="bi bi-file-earmark-pdf text-danger"></i>
+                                {% else %}
+                                    <i class="bi bi-file-earmark-image text-primary"></i>
+                                {% endif %}
+                                {{ img.original_name }}
                             </p>
                             {% if img.description %}
                                 <p class="card-text small text-muted mb-0">{{ img.description }}</p>
@@ -96,9 +108,10 @@
                                 {{ img.uploaded_at.strftime('%d.%m.%Y %H:%M') }}
                             </p>
                         </div>
+
                         {% if current_user.role in ('admin', 'doctor') %}
                         <div class="card-footer bg-white border-0 p-1 text-end">
-                            <form method="POST" action="{{ url_for('delete_image', image_id=img.id) }}" onsubmit="return confirm('Удалить снимок?');" style="display:inline;">
+                            <form method="POST" action="{{ url_for('delete_image', image_id=img.id) }}" onsubmit="return confirm('Удалить файл?');" style="display:inline;">
                                 <button type="submit" class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-trash"></i></button>
                             </form>
                         </div>
@@ -109,9 +122,9 @@
             </div>
         </div>
         {% else %}
-        <div class="alert alert-secondary text-center">
-            <i class="bi bi-image display-4 d-block mb-2"></i>
-            У этого пациента пока нет загруженных снимков.
+        <div class="alert alert-secondary text-center shadow-sm">
+            <i class="bi bi-folder-x display-4 d-block mb-2"></i>
+            У этого пациента пока нет загруженных снимков или документов.
         </div>
         {% endif %}
     </div>
@@ -126,8 +139,19 @@
         const galleryContainer = document.querySelector('.gallery-scroll-container');
         if (galleryContainer) {
             new Viewer(galleryContainer, {
-                navbar: false, title: false,
-                toolbar: { zoomIn: 1, zoomOut: 1, oneToOne: 1, reset: 1, rotateLeft: 1, rotateRight: 1 }
+                navbar: false,
+                title: false,
+                toolbar: {
+                    zoomIn: 1,
+                    zoomOut: 1,
+                    oneToOne: 1,
+                    reset: 1,
+                    rotateLeft: 1,
+                    rotateRight: 1
+                },
+                filter(image) {
+                    return !image.src.toLowerCase().endsWith('.pdf');
+                }
             });
         }
     });

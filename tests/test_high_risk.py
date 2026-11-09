@@ -1,7 +1,7 @@
 import pytest
 import io
 from datetime import datetime, timedelta, time
-from models import Appointment, Patient, Doctor, User, ScheduleSlot, Service
+from models import Appointment, Patient, Doctor, User, ScheduleSlot, MedicalImage
 from extensions import db
 
 
@@ -241,3 +241,42 @@ def test_patients_search_and_pagination(app, client, init_data):
     response_page2 = client.get('/patients?page=2')
     assert response_page2.status_code == 200
     assert 'page=2' in response_page2.text or 'Вперед' in response_page2.text
+
+
+def test_doctor_can_upload_pdf_document(app, client, init_data):
+    """Тест: Врач может загрузить PDF-документ в карточку пациента."""
+
+    with app.app_context():
+        appt = Appointment(
+            patient_id=init_data['patient_id'],
+            doctor_id=init_data['doctor_id'],
+            date=datetime.now() + timedelta(days=1)
+        )
+        db.session.add(appt)
+        db.session.commit()
+
+    client.post('/login', data={'username': 'doc_test', 'password': 'pass', 'role': 'doctor'})
+
+    pdf_content = b"%PDF-1.4 fake pdf content for testing"
+    data = {
+        'image': (io.BytesIO(pdf_content), 'test_document.pdf'),
+        'description': 'Заключение УЗИ'
+    }
+
+    response = client.post(
+        f'/patients/{init_data["patient_id"]}/upload_image',
+        data=data,
+        content_type='multipart/form-data',
+        follow_redirects=True
+    )
+
+    assert response.status_code == 200
+    assert 'успешно' in response.text or 'Загружен' in response.text
+
+    with app.app_context():
+        doc = MedicalImage.query.filter(MedicalImage.filename.like('%.pdf')).first()
+        assert doc is not None
+        assert doc.original_name == 'test_document.pdf'
+        assert doc.description == 'Заключение УЗИ'
+
+    assert 'bi-file-earmark-pdf' in response.text
